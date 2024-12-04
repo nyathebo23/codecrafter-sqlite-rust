@@ -1,4 +1,3 @@
-use anyhow::Error;
 use anyhow::{bail, Result};
 use core::slice::Iter;
 
@@ -9,8 +8,8 @@ use std::io::BufReader;
 fn offset_cells_list(page_data: &Vec<u8>, cells_count: usize) -> Vec<u8> {
     let mut offset_cells_array: Vec<u8> = Vec::new();
     let mut count: usize = 0;
-    while count < (cells_count as usize) {
-        offset_cells_array.push(page_data[112+count]);
+    while count < cells_count {
+        offset_cells_array.push(page_data[12+count]);
         count += 1;
     }
     offset_cells_array
@@ -101,22 +100,25 @@ fn main() -> Result<()> {
             let mut page_data = Vec::new();
             let size = reader.read_to_end(&mut page_data);  
             match size {
-                Ok(size) => println!("size {} ", size),
+                Ok(size) => println!("size {} pagesize {}", size, page_size),
                 Err(error) => panic!("error copy file content {}", error)
             }
-            let cells_count = u16::from_be_bytes([page_data[103], page_data[104]]);
+            let cells_count = u16::from_be_bytes([page_data[3], page_data[4]]);
             let cells_num_size = (cells_count * 2) as usize;
             let offset_cells_array = offset_cells_list(&page_data, cells_count as usize);
-
+            println!("{} ", cells_count);
             let mut cells_num = 0;
             let mut offset = u16::from_be_bytes([offset_cells_array[cells_num], offset_cells_array[cells_num+1]]) as usize;
             let mut cell_data: Iter<'_, u8> = page_data.iter();
             cell_data.nth(offset - 1);
+            let tbl_name =  table_name(&mut cell_data);
+            println!("{} ", tbl_name);
+            cells_num += 2;
             while cells_num != cells_num_size {
-                let tbl_name =  table_name(&mut cell_data);
-                println!("{} ", tbl_name);
                 offset = u16::from_be_bytes([offset_cells_array[cells_num], offset_cells_array[cells_num+1]]) as usize;
                 cell_data.nth(offset - 1);
+                let tbl_name =  table_name(&mut cell_data);
+                println!("{} ", tbl_name);
                 cells_num += 2;
             }
         },
