@@ -74,11 +74,9 @@ fn main() -> Result<()> {
             let mut file = File::open(&args[1])?;
             let mut header_and_header_page = [0; 112];
             file.read_exact(&mut header_and_header_page)?;
-            #[allow(unused_variables)]
+
             let page_size = u16::from_be_bytes([header_and_header_page[16], header_and_header_page[17]]);
 
-            file.read_exact(&mut header_and_header_page)?;
-            #[allow(unused_variables)]
             let cells_count = u16::from_be_bytes([header_and_header_page[103], header_and_header_page[104]]);
             // You can use print statements as follows for debugging, they'll be visible when running tests.
             eprintln!("Logs from your program will appear here!");
