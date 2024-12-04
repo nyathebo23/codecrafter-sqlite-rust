@@ -1,48 +1,46 @@
 use anyhow::{bail, Result};
-use core::slice::Iter;
-
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 
-fn offset_cells_list(page_data: &Vec<u8>, cells_count: usize) -> Vec<u8> {
-    let mut offset_cells_array: Vec<u8> = Vec::new();
+fn process_cells_content_areas(page_data: &Vec<u8>, cells_count: usize, start_page_offset: usize) {
     let mut count: usize = 0;
     while count < cells_count {
-        offset_cells_array.push(page_data[12+count]);
-        count += 1;
+        let ind_offset_array = start_page_offset + count;
+        let offset = u16::from_be_bytes([page_data[ind_offset_array], page_data[ind_offset_array+1]]);
+        let mut start_area_iter = page_data.iter().skip(offset as usize);
+        let tbl_name = table_name(&mut start_area_iter);
+        print!("{} ", tbl_name);
+        count += 2;
     }
-    offset_cells_array
 }
 
 
-fn varint_val(cell_data: &mut Iter<'_, u8>) -> (u64, u8) {
+fn varint_val<'a> (cell_data: &mut impl Iterator <Item = &'a u8>) -> (u64, u8) {
     let mut cell_val = result_on_iter_num(cell_data);
     let mut first_bit = cell_val >> 7;
     let mut varint_num = (cell_val & 127) as u64;
     let mut bits_count: u8 = 7;
     while first_bit == 1 && bits_count < 63{
-        cell_val = match cell_data.nth(0) {
-            Some(i) => *i,
-            None => 0,
-        };
+        cell_val = result_on_iter_num(cell_data);
         varint_num = varint_num << 7 | (cell_val & 127) as u64;
         first_bit = cell_val >> 7;
-        bits_count += 1;
+        bits_count += 7;
     }
     (varint_num, bits_count)
 }
 
-fn result_on_iter_num(iter_data: &mut Iter<'_, u8>) -> u8 {
+fn result_on_iter_num<'a> (iter_data: &mut impl Iterator <Item = &'a u8>) -> u8 {
     match iter_data.nth(0) {
         Some(i) => *i,
         None => 0,
     }
 }
 
-fn table_name(cell_data: &mut Iter<'_, u8>) -> String {
+fn table_name<'a> (cell_data: &mut impl Iterator <Item = &'a u8>) -> String {
     let _record_size = varint_val(cell_data).0;
     let _rowid = varint_val(cell_data).0;
+
     let header_size = result_on_iter_num(cell_data);
     let table_type_size = (result_on_iter_num(cell_data) - 13)/2;
     let table_name0_size = (result_on_iter_num(cell_data) - 13)/2;
@@ -90,37 +88,17 @@ fn main() -> Result<()> {
             println!("number of tables: {}", cells_count);
         },
         ".tables" => {
-            let mut file = File::open(&args[1])?;
-            let mut header = [0; 100];
-            file.read_exact(&mut header)?;
+            let file = File::open(&args[1])?;
+            let mut reader = BufReader::new(file);
 
-            let page_size = u16::from_be_bytes([header[16], header[17]]);
+            let mut pages_data = Vec::new();
 
-            let mut reader = BufReader::with_capacity(page_size as usize, file);
-            let mut page_data = Vec::new();
-            let size = reader.read_to_end(&mut page_data);  
-            match size {
-                Ok(size) => println!("size {} pagesize {}", size, page_size),
-                Err(error) => panic!("error copy file content {}", error)
-            }
-            let cells_count = u16::from_be_bytes([page_data[3], page_data[4]]);
+            reader.read_to_end(&mut pages_data)?; 
+
+            let cells_count = u16::from_be_bytes([pages_data[103], pages_data[104]]);
             let cells_num_size = (cells_count * 2) as usize;
-            let offset_cells_array = offset_cells_list(&page_data, cells_count as usize);
-            println!("{} ", cells_count);
-            let mut cells_num = 0;
-            let mut offset = u16::from_be_bytes([offset_cells_array[cells_num], offset_cells_array[cells_num+1]]) as usize;
-            let mut cell_data: Iter<'_, u8> = page_data.iter();
-            cell_data.nth(offset - 1);
-            let tbl_name =  table_name(&mut cell_data);
-            println!("{} ", tbl_name);
-            cells_num += 2;
-            while cells_num != cells_num_size {
-                offset = u16::from_be_bytes([offset_cells_array[cells_num], offset_cells_array[cells_num+1]]) as usize;
-                cell_data.nth(offset - 1);
-                let tbl_name =  table_name(&mut cell_data);
-                println!("{} ", tbl_name);
-                cells_num += 2;
-            }
+            process_cells_content_areas(&pages_data, cells_num_size, 108);
+    
         },
         _ => bail!("Missing or invalid command passed: {}", command),
     }
