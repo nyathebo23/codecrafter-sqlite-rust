@@ -27,7 +27,7 @@ fn page_data(pages_datas: &mut Vec<u8>, table_name: String, pagesize: u16, cells
         (tbl_name, rootpage) = table_name_and_page(&mut start_area_iter);
         count += 2;
     }
-    if count == cells_num_size {
+    if tbl_name == table_name {
         let vec: Vec<&u8> = Vec::new();
         return vec;
     }
