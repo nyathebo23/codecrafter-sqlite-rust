@@ -31,7 +31,7 @@ fn page_data(pages_datas: &mut Vec<u8>, table_name: String, pagesize: u16, cells
         let vec: Vec<&u8> = Vec::new();
         return vec;
     }
-    let page_data: Vec<&u8> = pages_datas.iter().skip((pagesize as usize) * (rootpage as usize)).
+    let page_data: Vec<&u8> = pages_datas.iter().skip((pagesize as usize) * ((rootpage - 1) as usize)).
     take(pagesize as usize).collect();
     page_data
 }
