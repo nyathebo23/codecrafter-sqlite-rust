@@ -60,6 +60,9 @@ fn table_name_and_page<'a> (cell_data: &mut impl Iterator <Item = &'a u8>) -> (S
 }
 
 fn count_table_rows (page: Vec<&u8>) -> u16 {
+    if page.is_empty() {
+        return  0;
+    }
     let cells_count = u16::from_be_bytes([*page[3], *page[4]]);
     cells_count 
 }
