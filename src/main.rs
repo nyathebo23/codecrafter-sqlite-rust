@@ -31,8 +31,9 @@ fn main() -> Result<()> {
         },
         _ => {
             let command_items: Vec<&str> = command.as_str().split(' ').collect();
-            match command_items.first() {
-                Some(&"SELECT") => {
+            let clause = command_items[0].to_lowercase();
+            match clause.as_str() {
+                "select" => {
                     let file = File::open(&args[1])?;
                     let table_name = match command_items.last()  {
                         Some(tablename) => *tablename,
