@@ -2,8 +2,7 @@
 use std::fs::File;
 use std::io::Read;
 use std::io::BufReader;
-use crate::utils_func::result_on_iter_num;
-use crate::utils_func::varint_val;
+use crate::utils_func::table_name;
 
 pub fn database_tables_names(dbfile: File){
     let mut reader = BufReader::new(dbfile);
@@ -27,26 +26,4 @@ fn process_cells_content_areas(page_data: &Vec<u8>, cells_count: usize, start_pa
         print!("{} ", tbl_name);
         count += 2;
     }
-}
-
-fn table_name<'a> (cell_data: &mut impl Iterator <Item = &'a u8>) -> String {
-    let _record_size = varint_val(cell_data).0;
-    let _rowid = varint_val(cell_data).0;
-
-    let header_size = result_on_iter_num(cell_data);
-    let table_type_size = (result_on_iter_num(cell_data) - 13)/2;
-    let table_name0_size = (result_on_iter_num(cell_data) - 13)/2;
-    let table_name_size = (result_on_iter_num(cell_data) - 13)/2;
-
-    cell_data.nth((header_size - 5) as usize);
-    cell_data.nth((table_type_size + table_name0_size - 1) as usize);
-
-    let mut table_name = String::new();
-    let mut ind: u8 = 0;
-    while ind < table_name_size {
-        let byte = result_on_iter_num(cell_data);
-        table_name.push(byte as char);
-        ind += 1;
-    }
-    table_name
 }
