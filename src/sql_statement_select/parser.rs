@@ -1,6 +1,7 @@
 use peg::parser;
 use super::parser_utils::{*};
 
+
 parser!{
     pub grammar parse_statement() for str {
         rule string() -> String
@@ -22,15 +23,23 @@ parser!{
 
         rule table_attr() -> String = attribut:identifier() (whitespace() identifier())* {  String::from(attribut) }
 
-        pub rule table_column_names() -> Vec<String> =
-            ("create"/"CREATE") whitespace() ("table" / "TABLE") whitespace() identifier() whitespace()? 
+        pub rule table_column_names() -> TableHeadDesc =
+            ("create"/"CREATE") whitespace() ("table" / "TABLE") whitespace() (identifier() / "\"" identifier() "\"") whitespace()? 
             "(" whitespace()? expression:$(expr()) whitespace()?")"
             {
-                let res = expression.split(",").map(|val| {
-                    let arr: Vec<&str> = val.trim().split(" ").collect(); 
+                let mut rowid: Option<String> = None;
+                let res: Vec<String> = expression.split(",").map(|val| {
+                    let arr: Vec<&str> = val.trim().split(" ").collect();
+                    let lowercase_val = val.to_lowercase(); 
+                    if lowercase_val.contains("integer") && lowercase_val.contains("primary") &&lowercase_val.contains("key") {
+                        rowid = Some(String::from(arr[0]));
+                    }
                     String::from(arr[0])
                 }).collect();
-                res
+                TableHeadDesc {
+                    columns_names: res,
+                    rowid_column_name: rowid
+                }
             }
 
         rule condition_expression() -> CondExpression = precedence! {

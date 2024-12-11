@@ -59,7 +59,11 @@ pub struct SelectStmtData {
     pub condition: CondExpression
 }
 
-
+#[derive(Clone, Debug)]
+pub struct TableHeadDesc {
+    pub rowid_column_name: Option<String>,
+    pub columns_names: Vec<String>
+}
 
 #[allow(dead_code)]
 pub fn print_stmt_cond(cond: CondExpression) {

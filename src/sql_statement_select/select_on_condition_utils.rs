@@ -46,6 +46,7 @@ impl ExprCondition for ExprBinaryComparison {
 
         let opleft_field_value: ColumnValue = value_from_operand(left_op, row_hash);
         let opright_field_value: ColumnValue = value_from_operand(right_op, row_hash);
+
         if is_comparison_valid(&opleft_field_value, &opright_field_value, &self.operator){
             compare(&opleft_field_value, &opright_field_value, &self.operator)
         }
@@ -72,30 +73,31 @@ fn value_from_operand (column_operand: CompOperand, row_hash: &HashMap<String, C
                     value.clone()
                 },
                 None => {
-                    ColumnValue::new(ColumnValueType::Null, String::from(""), Vec::new())
+                    ColumnValue::new(ColumnValueType::Null, String::from(""))
                 }
             }
         },
         CompOperand::Number(num) => {
-            ColumnValue::new(ColumnValueType::Float, num.to_string(), Vec::new())
+            ColumnValue::new(ColumnValueType::Real, num.to_string())
         },
         CompOperand::Str(string) => {
-            ColumnValue::new(ColumnValueType::String, string, Vec::new())
+            ColumnValue::new(ColumnValueType::Text, string)
         }
     }
 }
 
 fn is_comparison_valid(col1: &ColumnValue, col2: &ColumnValue, op: &CompOperator) -> bool {
-    if col1.data_type == ColumnValueType::Float || col1.data_type == ColumnValueType::Integer {
-        if col2.data_type == ColumnValueType::Float || col2.data_type == ColumnValueType::Integer {
+    if col1.data_type == ColumnValueType::Real || col1.data_type == ColumnValueType::Integer {
+        if col2.data_type == ColumnValueType::Real || col2.data_type == ColumnValueType::Integer {
             return false;
         }
         return true
     }
-    if col1.data_type != col2.data_type {
+
+    if (col1.data_type != col2.data_type) && (col1.data_type != ColumnValueType::Null) && (col2.data_type != ColumnValueType::Null) {
         return false;
     }
-    if col1.data_type != ColumnValueType::String {
+    if col1.data_type != ColumnValueType::Text {
         return match op {
             CompOperator::Equal | CompOperator::NotEqual => true,
             _ => false
@@ -105,12 +107,12 @@ fn is_comparison_valid(col1: &ColumnValue, col2: &ColumnValue, op: &CompOperator
 }
 
 fn compare(col1: &ColumnValue, col2: &ColumnValue, op: &CompOperator) -> bool {
-    if col1.data_type == ColumnValueType::Float || col1.data_type == ColumnValueType::Integer {
+    if col1.data_type == ColumnValueType::Real || col1.data_type == ColumnValueType::Integer {
         let val1: f64 = col1.value.parse().unwrap();
         let val2: f64 = col2.value.parse().unwrap();
         return compare_value::<f64>(val1, val2, &op);
     }
-    if col1.data_type == ColumnValueType::String {
+    if col1.data_type == ColumnValueType::Text {
         return compare_value::<String>(col1.value.clone(), col2.value.clone(), &op);
     }
     false
