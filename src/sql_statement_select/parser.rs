@@ -7,13 +7,19 @@ parser!{
         rule string() -> String
         =  "'" string_val:$([^'\'']*) "'" { String::from(string_val) }
 
+        rule inquote_name() -> String = string:$("\"" [^'\"']* "\"") {
+            String::from(string)
+        }
+        
         rule whitespace() = quiet!{[' ' | '\n' | '\t' | '\r']+}
 
         rule identifier() -> String = 
-            word:$([ 'a'..='z' | 'A'..='Z']['a'..='z' | 'A'..='Z' | '_' | '0'..='9' ]*){ String::from(word) }
+            word:$(([ 'a'..='z' | 'A'..='Z']['a'..='z' | 'A'..='Z' | '_' | '0'..='9' ]*) / inquote_name())
+            { String::from(word) }
 
         rule expr() -> String = 
-            word:$([ 'a'..='z' | 'A'..='Z']['a'..='z' | 'A'..='Z' | '_' | ',' | '0'..='9' | ' ' | '\n' | '\t' | '\r' ]*){ String::from(word) }
+            word:$([ 'a'..='z' | 'A'..='Z']['a'..='z' | 'A'..='Z' | '_' | ',' | '0'..='9' | ' ' | '\n' | '\t' | '\r' | '\"' ]*)
+            { String::from(word) }
 
         rule count() -> String =
             str_count:$("count(*)"/"COUNT(*)") {String::from(str_count)}
@@ -21,20 +27,24 @@ parser!{
         rule number() -> f64 = 
             n:$(['0'..='9']+(['.']['0'..='9']+)?) {? n.parse::<f64>().or(Err("u32")) }
 
-        rule table_attr() -> String = attribut:identifier() (whitespace() identifier())* {  String::from(attribut) }
+        pub rule column_desc() -> Vec<String> = whitespace()? items:identifier() ** whitespace() whitespace()? {
+            items
+        }
 
         pub rule table_column_names() -> TableHeadDesc =
-            ("create"/"CREATE") whitespace() ("table" / "TABLE") whitespace() (identifier() / "\"" identifier() "\"") whitespace()? 
+            ("create"/"CREATE") whitespace() ("table" / "TABLE") whitespace() identifier() whitespace()? 
             "(" whitespace()? expression:$(expr()) whitespace()?")"
             {
                 let mut rowid: Option<String> = None;
                 let res: Vec<String> = expression.split(",").map(|val| {
-                    let arr: Vec<&str> = val.trim().split(" ").collect();
+
                     let lowercase_val = val.to_lowercase(); 
+                    let arr = column_desc(val).unwrap();
+
                     if lowercase_val.contains("integer") && lowercase_val.contains("primary") &&lowercase_val.contains("key") {
-                        rowid = Some(String::from(arr[0]));
+                        rowid = Some(arr[0].clone());
                     }
-                    String::from(arr[0])
+                    arr[0].clone()
                 }).collect();
                 TableHeadDesc {
                     columns_names: res,
