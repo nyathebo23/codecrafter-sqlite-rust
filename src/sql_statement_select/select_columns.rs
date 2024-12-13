@@ -43,7 +43,7 @@ pub fn page_data_and_table_columns(pages_datas: &mut Vec<u8>, tablename: String,
     }
 
     let sql = text_from_cell(&mut start_area_iter, sql_text_size);
-
+    println!("sql {}", sql);
     let table_head_desc = table_column_names(sql.as_str()).unwrap();
     
     let page_data: Vec<u8> = pages_datas.iter().skip((pagesize as usize) * ((rootpage - 1) as usize)).
@@ -74,7 +74,7 @@ where T : Iterator <Item = &'a u8> {
 }
 
 
-fn display_query_result(result: Vec<Vec<ColumnValue>>) {
+pub fn display_query_result(result: Vec<Vec<ColumnValue>>) {
     for item in result {
         print!("{}", item[0].value);
         for colvalue in item.iter().skip(1) {

@@ -34,11 +34,11 @@ pub fn select_count(dbfile: &File, select_stmt: &SelectStmtData){
     }
 }
 
-pub fn count_table_rows (page: Vec<&u8>) -> u16 {
+pub fn count_table_rows (page: Vec<u8>) -> u16 {
     if page.is_empty() {
         return  0;
     }
-    let cells_count = u16::from_be_bytes([*page[3], *page[4]]);
+    let cells_count = u16::from_be_bytes([page[3], page[4]]);
     cells_count 
 }
 

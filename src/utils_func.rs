@@ -33,7 +33,7 @@ where T : Iterator <Item = &'a u8> {
 //     rootpage_size
 // }
 
-pub fn page_data(pages_datas: &mut Vec<u8>, tablename: String, pagesize: u16, cells_num_size: usize) -> Vec<&u8> {
+pub fn page_data(pages_datas: &mut Vec<u8>, tablename: String, pagesize: u16, cells_num_size: usize) -> Vec<u8> {
     let mut count: usize = 0;
     let mut tbl_name = String::from("");
     let mut start_area_iter = pages_datas.iter().skip(0);
@@ -44,12 +44,12 @@ pub fn page_data(pages_datas: &mut Vec<u8>, tablename: String, pagesize: u16, ce
         count += 2;
     }
     if tbl_name != tablename {
-        let vec: Vec<&u8> = Vec::new();
+        let vec: Vec<u8> = Vec::new();
         return vec;
     }
     let rootpage = result_on_iter_num(&mut start_area_iter);
-    let page_data: Vec<&u8> = pages_datas.iter().skip((pagesize as usize) * ((rootpage - 1) as usize)).
-    take(pagesize as usize).collect();
+    let page_data: Vec<u8> = pages_datas.iter().skip((pagesize as usize) * ((rootpage - 1) as usize)).
+    take(pagesize as usize).cloned().collect();
     page_data
 }
 

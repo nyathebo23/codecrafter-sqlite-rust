@@ -37,9 +37,7 @@ pub fn query_result_array(table_page_data: Vec<u8>, page_size: usize, all_pages:
     
     let query_result = match page_type {
         5 => query_interior_page(table_page_data, page_size, all_pages, select_stmt, table_columns),
-        2 => Vec::new(),
         13 => query_leaf_page(table_page_data, select_stmt, table_columns),
-        10 => Vec::new(),
         _ => {panic!("error in header");}
     };
     query_result
@@ -129,7 +127,7 @@ pub fn row_statement_result<'a>(cell_datas: &mut impl Iterator <Item = &'a u8>, 
 }
 
 
-fn consume_data<'a, T>(cell_datas_values: &mut T, serialtype: usize) -> ColumnValue 
+pub fn consume_data<'a, T>(cell_datas_values: &mut T, serialtype: usize) -> ColumnValue 
     where T : Iterator <Item = &'a u8> {
     
     match serialtype {

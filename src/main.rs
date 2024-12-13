@@ -2,6 +2,7 @@ use anyhow::{bail, Result};
 use database_infos::database_infos;
 use database_tables_names::database_tables_names;
 use sql_statement_select::select_columns::select_columns;
+use sql_statement_select::select_with_index::select_with_index;
 use std::fs::File;
 //use std::collections::HashMap;
 mod database_infos;
@@ -39,7 +40,10 @@ fn main() -> Result<()> {
             let stmt = select_statement(command.as_str());
             match stmt {
                 Ok(stment) => {
-                    if stment.columns.len() == 1 && stment.columns[0].to_lowercase().as_str() == "count(*)" {
+                    if stment.table_name == String::from("companies") {
+                        select_with_index(&file, &stment);
+                    }
+                    else if stment.columns.len() == 1 && stment.columns[0].to_lowercase().as_str() == "count(*)" {
                         select_count(&file, &stment);
                     }
                     else {
