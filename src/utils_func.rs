@@ -30,6 +30,8 @@ where T : Iterator <Item = &'a u8> {
         varint_num = varint_num << 7 | (cell_val & 127) as u64;
         first_bit = cell_val >> 7;
     }
+    println!("num val {}", varint_num);
+
     varint_num as usize
 }
 
