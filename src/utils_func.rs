@@ -63,7 +63,7 @@ pub fn page_data(pages_datas: &Vec<u8>, tablename: String, pagesize: usize, cell
         let offset = u16::from_be_bytes([pages_datas[108 + count], pages_datas[count+109]]) as usize;
         let mut start_area_iter = pages_datas.iter().skip(offset);
         table_schema_inf = table_schema_infos(&mut start_area_iter);
-        println!("name {} table name {} root", table_schema_inf.name, table_schema_inf.tbl_name, table_schema_inf.rootpage);
+        println!("name {} table name {} root {}", table_schema_inf.name, table_schema_inf.tbl_name, table_schema_inf.rootpage);
         count += 2;
     }
 
