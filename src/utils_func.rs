@@ -97,7 +97,25 @@ where T : Iterator <Item = &'a u8> {
     let name = text_from_cell(cell_datas, name_size as usize);
 
     let table_name= text_from_cell(cell_datas, table_name_size as usize);
-    let rootpage = varint_val(cell_datas);
+    let rootpage = match rootpage_size {
+        1 => {
+            let bytes_values: Vec<u8> = cell_datas.by_ref().take(1).map(|val| *val).collect();
+            i8::from_be_bytes([bytes_values[0]]) as usize
+        },
+        2 => {
+            let bytes_values: Vec<u8> = cell_datas.by_ref().take(2).map(|val| *val).collect();
+            i16::from_be_bytes([bytes_values[0], bytes_values[1]]) as usize
+        },
+        3 => {
+            let bytes_values: Vec<u8> = cell_datas.by_ref().take(3).map(|val| *val).collect();
+            i32::from_be_bytes([0, bytes_values[0], bytes_values[1], bytes_values[2]]) as usize
+        },
+        4 => {
+            let bytes_values: Vec<u8> = cell_datas.by_ref().take(4).map(|val| *val).collect();
+            i32::from_be_bytes([bytes_values[0], bytes_values[1], bytes_values[2], bytes_values[3]]) as usize
+        },
+        _ => panic!("error rootsize")
+    };
     let sql = text_from_cell(cell_datas, (sql_text_size - 13)/2);
     println!("table name {} tabletype {} rootpage size {} rootpage {} ", name, table_type, rootpage_size, rootpage);
     SchemaInfos::new(table_type, name, table_name, rootpage, sql)
