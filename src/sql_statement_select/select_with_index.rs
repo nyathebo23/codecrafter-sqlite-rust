@@ -217,18 +217,15 @@ fn query_leaf_table_page (table_page_data: Vec<u8>, select_stmt: &SelectStmtData
         if check_rowid_in_page(&table_page_data, rowid) && count < cells_count {
             let mut offset = u16::from_be_bytes([table_page_data[8 + count], table_page_data[count+9]]) as usize;
             while count < cells_count && rowid_by_offset(&table_page_data, offset) != rowid {
-                offset = u16::from_be_bytes([table_page_data[8 + count], table_page_data[count+9]]) as usize;
+                offset = u16::from_be_bytes([table_page_data[count+8], table_page_data[count+9]]) as usize;
                 count += 2;
             }
-            if count < cells_count {
-                let mut content_offset_area = table_page_data.iter().skip(offset);
-                let row_result = row_statement_result(&mut content_offset_area,
-                    table_columns.clone(), select_stmt);
-                query_datas.push(row_result); 
-                rowid_array.pop_front();
-                count += 2;
-            }
-            else {break;}
+            let mut content_offset_area = table_page_data.iter().skip(offset);
+            let row_result = row_statement_result(&mut content_offset_area,
+                table_columns.clone(), select_stmt);
+            query_datas.push(row_result); 
+            rowid_array.pop_front();
+            count += 2;
         }
         else {
             break;
