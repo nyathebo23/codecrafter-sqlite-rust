@@ -33,7 +33,6 @@ pub fn select_with_index(dbfile: &File, select_stmt: &SelectStmtData){
         table_name: select_stmt.table_name.clone(),
         condition: CondExpression::Null
     };
-    println!("{:?}", rowid_array);
 
     let result = query_on_table(page, table_page_size, &all_pages, 
         &select_stment, &table_head_desc, &mut rowid_array);
@@ -188,7 +187,7 @@ fn query_interior_table_page(table_page_data: Vec<u8>, page_size: usize, all_pag
             let page_pointer_vec: Vec<u8> = content_offset_area.take(4).cloned().collect();
             let page_num = u32::from_be_bytes([page_pointer_vec[0], page_pointer_vec[1], page_pointer_vec[2], page_pointer_vec[3]]) as usize;
             let page_data: Vec<u8> = all_pages.iter().skip(page_size * (page_num - 1)).
-            take(page_size as usize).cloned().collect();
+            take(page_size).cloned().collect();
             let query_result = query_on_table(page_data, page_size, 
                 all_pages, select_stmt, table_columns, rowid_array);
             query_datas.extend(query_result);
@@ -196,7 +195,7 @@ fn query_interior_table_page(table_page_data: Vec<u8>, page_size: usize, all_pag
         }
         let right_most_page_num = u32::from_be_bytes([table_page_data[8], table_page_data[9], table_page_data[10], table_page_data[11]]) as usize;
         let right_page_data: Vec<u8> = all_pages.iter().skip(page_size * (right_most_page_num - 1)).
-        take(page_size as usize).cloned().collect();
+        take(page_size).cloned().collect();
         let query_result = query_on_table(right_page_data, page_size, 
             all_pages, select_stmt, table_columns, rowid_array);
         query_datas.extend(query_result);
