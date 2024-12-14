@@ -99,7 +99,7 @@ where T : Iterator <Item = &'a u8> {
     let table_name= text_from_cell(cell_datas, table_name_size as usize);
     let rootpage = varint_val(cell_datas);
     let sql = text_from_cell(cell_datas, (sql_text_size - 13)/2);
-    println!("rootpage size {} rootpage {} ", rootpage_size, rootpage);
+    println!("table name {} tabletype {} rootpage size {} rootpage {} ", name, table_type, rootpage_size, rootpage);
     SchemaInfos::new(table_type, name, table_name, rootpage, sql)
 }
 
