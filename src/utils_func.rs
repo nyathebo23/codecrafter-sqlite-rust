@@ -22,6 +22,7 @@ impl SchemaInfos {
 pub fn varint_val<'a, T> (cell_datas: &mut T) -> usize
 where T : Iterator <Item = &'a u8> {
     let mut cell_val = result_on_iter_num(cell_datas);
+    println!("cell val {}", cell_val);
     let mut first_bit = cell_val >> 7;
     let mut varint_num = (cell_val & 127) as u64;
     while first_bit == 1 {
