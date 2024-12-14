@@ -64,15 +64,12 @@ fn query_interior_index_page(table_page_data: Vec<u8>, page_size: usize, all_pag
         while count < cells_num_size {
             let query_result = query_on_node(&table_page_data, page_size, all_pages, keyindex_value, count);
             if query_result.len() != 0 {break;}
-            println!("zertgyhinjjjjjjj");
             query_rowid.extend(query_result);
             count += 2;
         }
         while count < cells_num_size {
             let query_result = query_on_node(&table_page_data, page_size, all_pages, keyindex_value, count);
             if query_result.len() == 0 {break;}
-            println!("zertgyhinjjjjjjj");
-
             query_rowid.extend(query_result);
             count += 2;
         }
