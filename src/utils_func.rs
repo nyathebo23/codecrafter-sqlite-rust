@@ -89,7 +89,6 @@ where T : Iterator <Item = &'a u8> {
     let table_type_size = (result_on_iter_num(cell_datas) - 13)/2;
     let name_size = (result_on_iter_num(cell_datas) - 13)/2;
     let table_name_size = (result_on_iter_num(cell_datas) - 13)/2;
-    #[allow(unused_variables)]
     let rootpage_size = varint_val(cell_datas);
     let sql_text_size = varint_val(cell_datas);
 
@@ -117,7 +116,6 @@ where T : Iterator <Item = &'a u8> {
         _ => panic!("error rootsize")
     };
     let sql = text_from_cell(cell_datas, (sql_text_size - 13)/2);
-    println!("table name {} tabletype {} rootpage size {} rootpage {} ", name, table_type, rootpage_size, rootpage);
     SchemaInfos::new(table_type, name, table_name, rootpage, sql)
 }
 

@@ -36,7 +36,6 @@ pub fn select_with_index(dbfile: &File, select_stmt: &SelectStmtData){
     let result = query_on_table(page, table_page_size, &all_pages, 
         &select_stment, &table_head_desc, &mut rowid_array);
     
-    println!("{:?} {:?}", result, rowid_array);
     display_query_result(result);
 }
 
