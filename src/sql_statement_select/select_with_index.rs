@@ -73,6 +73,13 @@ fn query_interior_index_page(table_page_data: Vec<u8>, page_size: usize, all_pag
             query_rowid.extend(query_result);
             count += 2;
         }
+        if count == cells_num_size {
+            let page_num = u32::from_be_bytes([table_page_data[8], table_page_data[9], table_page_data[10], table_page_data[11]]) as usize;
+            let page_data: Vec<u8> = all_pages.iter().skip(page_size * (page_num - 1)).
+            take(page_size).cloned().collect();
+        
+            query_rowid.extend(query_result_on_index(page_data, page_size, all_pages, keyindex_value));
+        }
         query_rowid
 }
 
@@ -83,8 +90,8 @@ fn query_on_node(table_page_data: &Vec<u8>, page_size: usize, all_pages: &Vec<u8
     let page_pointer_vec: Vec<u8> = content_offset_area.by_ref().take(4).cloned().collect();
 
     let page_num = u32::from_be_bytes([page_pointer_vec[0], page_pointer_vec[1], page_pointer_vec[2], page_pointer_vec[3]]);
-    let page_data: Vec<u8> = all_pages.iter().skip((page_size as usize) * ((page_num - 1) as usize)).
-    take(page_size as usize).cloned().collect();
+    let page_data: Vec<u8> = all_pages.iter().skip(page_size * ((page_num - 1) as usize)).
+    take(page_size).cloned().collect();
 
     query_rowid.extend(query_result_on_index(page_data, page_size, all_pages, keyindex_value));
     match get_rowid(&mut content_offset_area, keyindex_value) {

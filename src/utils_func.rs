@@ -22,7 +22,7 @@ impl SchemaInfos {
 pub fn varint_val<'a, T> (cell_datas: &mut T) -> usize
 where T : Iterator <Item = &'a u8> {
     let mut cell_val = result_on_iter_num(cell_datas);
-    println!("cell val {}", cell_val);
+
     let mut first_bit = cell_val >> 7;
     let mut varint_num = (cell_val & 127) as u64;
     while first_bit == 1 {
@@ -30,7 +30,6 @@ where T : Iterator <Item = &'a u8> {
         varint_num = varint_num << 7 | (cell_val & 127) as u64;
         first_bit = cell_val >> 7;
     }
-    println!("num val {}", varint_num);
 
     varint_num as usize
 }
@@ -90,7 +89,8 @@ where T : Iterator <Item = &'a u8> {
     let table_type_size = (result_on_iter_num(cell_datas) - 13)/2;
     let name_size = (result_on_iter_num(cell_datas) - 13)/2;
     let table_name_size = (result_on_iter_num(cell_datas) - 13)/2;
-    cell_datas.nth(0);
+    #[allow(unused_variables)]
+    let rootpage_size = varint_val(cell_datas);
     let sql_text_size = varint_val(cell_datas);
 
     let table_type = text_from_cell(cell_datas, table_type_size as usize);
