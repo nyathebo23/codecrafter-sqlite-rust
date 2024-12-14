@@ -16,7 +16,7 @@ pub fn select_count(dbfile: &File, select_stmt: &SelectStmtData){
     let _ = reader.read_to_end(&mut pages_data); 
     let cells_count = u16::from_be_bytes([pages_data[103], pages_data[104]]);
     let cells_num_size = (cells_count * 2) as usize;
-    let page_size = u16::from_be_bytes([pages_data[16], pages_data[17]]) ;
+    let page_size = u16::from_be_bytes([pages_data[16], pages_data[17]]) as usize;
     if select_stmt.condition == CondExpression::Null {
         let page_data = page_data(&mut pages_data, select_stmt.table_name.clone(), 
         page_size, cells_num_size);

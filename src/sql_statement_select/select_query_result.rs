@@ -59,13 +59,19 @@ fn query_interior_page(table_page_data: Vec<u8>, page_size: usize, all_pages: &V
             query_datas.extend(query_result);
             count += 2;
         }
+        let right_most_page_num = u32::from_be_bytes([table_page_data[8], table_page_data[9], table_page_data[10], table_page_data[11]]) as usize;
+        let right_page_data: Vec<u8> = all_pages.iter().skip(page_size * (right_most_page_num - 1)).
+        take(page_size as usize).cloned().collect();
+        let query_result = query_result_array(right_page_data, page_size, 
+            all_pages, select_stmt, table_columns);
+        query_datas.extend(query_result);
         query_datas
 }
 
 fn query_leaf_page(table_page_data: Vec<u8>, select_stmt: &SelectStmtData, table_columns: &TableHeadDesc)
  -> Vec<Vec<ColumnValue>> {
     let mut query_datas: Vec<Vec<ColumnValue>> = Vec::new();
-    let cells_count = (u16::from_be_bytes([table_page_data[3], table_page_data[4]]) * 2) as usize;
+    let cells_count = u16::from_be_bytes([table_page_data[3], table_page_data[4]]) as usize * 2;
     let mut count: usize = 0;
     while count < cells_count {
         let offset = u16::from_be_bytes([table_page_data[8 + count], table_page_data[count+9]]);
@@ -86,7 +92,7 @@ fn query_leaf_page(table_page_data: Vec<u8>, select_stmt: &SelectStmtData, table
 pub fn row_statement_result<'a>(cell_datas: &mut impl Iterator <Item = &'a u8>, table_head: TableHeadDesc, select_stmt: &SelectStmtData) 
     -> Vec<ColumnValue> {
 
-    let _record_size = varint_val(cell_datas);
+    let record_size = varint_val(cell_datas);
     let rowid = varint_val(cell_datas);
 
     let cell_datas_head: Vec<u8> = cell_datas.copied().collect();
@@ -104,6 +110,8 @@ pub fn row_statement_result<'a>(cell_datas: &mut impl Iterator <Item = &'a u8>, 
         let col_data = consume_data(&mut cell_datas_body,  serial_type);
         row_values.insert(table_col, col_data);
     }
+    let payload_size =  cell_datas_head.len() -  cell_datas_body.count();
+    assert_eq!(payload_size, record_size);
     match table_head.rowid_column_name {
         Some(name) => { 
             let rowid_colvalue = ColumnValue::new(ColumnValueType::Integer, rowid.to_string());

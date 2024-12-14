@@ -1,3 +1,24 @@
+#[allow(dead_code)]
+pub struct SchemaInfos {
+    pub schema_type: String,
+    pub name: String,
+    pub tbl_name: String,
+    pub rootpage: usize,
+    pub sql: String
+}
+
+impl SchemaInfos {
+    pub fn new(schema_type: String, name: String, tbl_name: String, rootpage: usize, sql: String) -> SchemaInfos {
+        SchemaInfos {
+            schema_type,
+            name,
+            tbl_name,
+            rootpage,
+            sql
+        }
+    }
+}
+
 pub fn varint_val<'a, T> (cell_datas: &mut T) -> usize
 where T : Iterator <Item = &'a u8> {
     let mut cell_val = result_on_iter_num(cell_datas);
@@ -33,24 +54,49 @@ where T : Iterator <Item = &'a u8> {
 //     rootpage_size
 // }
 
-pub fn page_data(pages_datas: &mut Vec<u8>, tablename: String, pagesize: u16, cells_num_size: usize) -> Vec<u8> {
+pub fn page_data(pages_datas: &Vec<u8>, tablename: String, pagesize: usize, cells_num_size: usize) -> Vec<u8> {
     let mut count: usize = 0;
-    let mut tbl_name = String::from("");
-    let mut start_area_iter = pages_datas.iter().skip(0);
-    while count < cells_num_size && tbl_name != tablename {
-        let offset = u16::from_be_bytes([pages_datas[108 + count], pages_datas[count+109]]);
-        start_area_iter = pages_datas.iter().skip(offset as usize);
-        tbl_name = table_name(&mut start_area_iter);
+    let mut table_schema_inf = SchemaInfos::new(String::from(""),
+     String::from(""), String::from(""), 0, String::from(""));
+
+    while count < cells_num_size && table_schema_inf.name != tablename {
+        let offset = u16::from_be_bytes([pages_datas[108 + count], pages_datas[count+109]]) as usize;
+        let mut start_area_iter = pages_datas.iter().skip(offset);
+        table_schema_inf = table_schema_infos(&mut start_area_iter);
         count += 2;
     }
-    if tbl_name != tablename {
+
+    if table_schema_inf.name != tablename {
         let vec: Vec<u8> = Vec::new();
         return vec;
     }
-    let rootpage = result_on_iter_num(&mut start_area_iter);
-    let page_data: Vec<u8> = pages_datas.iter().skip((pagesize as usize) * ((rootpage - 1) as usize)).
+
+    let page_data: Vec<u8> = pages_datas.iter().skip((pagesize) * ((table_schema_inf.rootpage - 1) as usize)).
     take(pagesize as usize).cloned().collect();
     page_data
+}
+
+
+pub fn table_schema_infos<'a, T> (cell_datas: &mut T) -> SchemaInfos 
+where T : Iterator <Item = &'a u8> {
+    let _record_size = varint_val(cell_datas);
+    let _rowid = varint_val(cell_datas);
+    #[allow(unused_variables)]
+    let header_size = result_on_iter_num(cell_datas);
+    let table_type_size = (result_on_iter_num(cell_datas) - 13)/2;
+    let name_size = (result_on_iter_num(cell_datas) - 13)/2;
+    let table_name_size = (result_on_iter_num(cell_datas) - 13)/2;
+    cell_datas.nth(0);
+    let sql_text_size = varint_val(cell_datas);
+
+    let table_type = text_from_cell(cell_datas, table_type_size as usize);
+    let name = text_from_cell(cell_datas, name_size as usize);
+
+    let table_name= text_from_cell(cell_datas, table_name_size as usize);
+    let rootpage = varint_val(cell_datas);
+    let sql = text_from_cell(cell_datas, (sql_text_size - 13)/2);
+
+    SchemaInfos::new(table_type, name, table_name, rootpage, sql)
 }
 
 
@@ -61,20 +107,18 @@ where T : Iterator <Item = &'a u8> {
 
     let header_size = result_on_iter_num(cell_datas);
     let table_type_size = (result_on_iter_num(cell_datas) - 13)/2;
-    let table_name0_size = (result_on_iter_num(cell_datas) - 13)/2;
-    let table_name_size = (result_on_iter_num(cell_datas) - 13)/2;
-    cell_datas.nth((header_size - 5) as usize);
-    cell_datas.nth((table_type_size + table_name0_size - 1) as usize);
+    let name_size = (result_on_iter_num(cell_datas) - 13)/2;
+    cell_datas.nth((header_size - 4) as usize);
+    cell_datas.nth((table_type_size - 1) as usize);
 
-    let table_name= text_from_cell(cell_datas, table_name_size as usize);
-
+    let table_name= text_from_cell(cell_datas, name_size as usize);
     table_name
 }
 
 
-pub fn text_from_cell<'a, T> (datas: &mut T, sqltext_size: usize) -> String 
+pub fn text_from_cell<'a, T> (datas: &mut T, text_size: usize) -> String 
 where  T : Iterator <Item = &'a u8>  {
-    let data: Vec<u8> = datas.take(sqltext_size).cloned().collect();
+    let data: Vec<u8> = datas.take(text_size).cloned().collect();
     bytes_to_string(data)
 }
 
